@@ -1,22 +1,21 @@
-execs := q2 q3
+CC = gcc 
+CFLAGS = -O3  
+LDFLAGS = -lm #-fopenmp 
+DEBUG = -g -fsanitize=address -lefence -Wall -Wextra #$(" ") #
 
-CC := gcc 
-CFLAGS := -O3  
-LDFLAGS := -lm -fopenmp 
-DEBUG := -g -fsanitize=address -lefence -Wall -Wextra #$(" ") #
+EXECS = q3_part1 #q3_part2
+all: $(EXECS)
 
-all: $(execs)
-
-q2: q2.c conj_grad.o
+q3_part1: q3_part1.c v_cycle.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(DEBUG)
 
-q3: q3.c conj_grad.o
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(DEBUG)
+#q3_part2: q3_part2.c v_cycle.o
+#	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(DEBUG)
 
-conj_grad.o: conj_grad.c
+v_cycle.o: v_cycle.c
 	$(CC) $(CFLAGS) -c $< $(LDFLAGS) $(DEBUG) 
 
 .PHONY: clean
 clean:
-	rm -f *.o $(execs)
+	rm -f *.o $(EXECS)
 

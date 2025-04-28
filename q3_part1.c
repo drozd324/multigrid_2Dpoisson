@@ -4,9 +4,6 @@
 #include <sys/time.h>
 #include "v_cycle.h"
 
-double f(double x1, double x2){
-	return 2 * M_PI * M_PI * sin(M_PI * x1) * sin(M_PI * x2);  
-}
 	
 void print_mat(int n, double* A){
 	for (int i=0; i<n; i++){
@@ -34,38 +31,40 @@ double walltime(){
 #define EPS 1e-7
 
 int main(){
-	int N = 128;
+	int N = 64;
+	int lmax = 5;
+	double omega = 1;
+	double nu = 4;
 	
-	FILE *fp = fopen("writeup/q2out.csv", "w");
-	fprintf(fp, "N,time,num iter\n");
+	//FILE *fp = fopen("writeup/q2out.csv", "w");
+	//fprintf(fp, "N,time,num iter\n");
 	
-	for (int l=0; l<lmax; k++){
+	for (int l=2; l<lmax; l++){
 
 		long long int size = N*N;
 		double* A = calloc(size * size, sizeof(double));
 		double* u = calloc(size, sizeof(double));
 		double* b = calloc(size, sizeof(double));
-	
-		make_matrix(A, b, N);
 		
 		double t1 = walltime();
-		double Vcycle(N, A, x, b, omega, nu, lmax, EPS);
+		make_matrix(A, b, N);
+		Vcycle(N, A, u, b, omega, nu, lmax, l, EPS);
+		//Vcycle(int nl, double* Al, double* xl, double* bl, 
+		//	double omega, int nu, int lmax, int l, double r, double eps);
 		double time = walltime() - t1;
 	
-		printf("N = %d Converged at iter = %d\n", N, num_iter);
+		printf("%lf\n", time);
 
-		if (k == GRID_PTS-1){	
-			for (int i=0; i<size; i++){
-				fprintf(fp_sol, "%lf ", u[i]);
-			}	
-			fprintf(fp_sol, "\n");
-		}
+//		for (int i=0; i<size; i++){
+//			fprintf(fp_sol, "%lf ", u[i]);
+//		}	
+//		fprintf(fp_sol, "\n");
 
 		free(A);
 		free(u);
 		free(b);
-		fprintf(fp, "%d,%lf,%d\n", N, time, num_iter);
+		//fprintf(fp, "%d,%lf,%d\n", N, time, num_iter);
 	}
-	fclose(fp);
+	//fclose(fp);
 }
 

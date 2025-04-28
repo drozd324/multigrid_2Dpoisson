@@ -10,4 +10,5 @@ double norm(int n, double* v);
 void mat_mul(double* A, double* B, double* C, int n, int m, int p);
 void jacobi(int nl, double* Al, double* xl, double* bl, double omega, int nu, double eps, double* x_out);
 void make_matrix(double* A, double* b, int N);
-double Vcycle(int nl, double* Al, double* xl, double* bl, double omega, int nu, int lmax);
+void Vcycle(int nl, double* Al, double* xl, double* bl, 
+			double omega, int nu, int lmax, int l, double eps);
