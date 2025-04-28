@@ -2,80 +2,45 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
-#include "conj_grad.h"
+#include <time.h> 
+#include "v_cycle.h"
 
-double f(double x1, double x2){
-	return 2 * M_PI * M_PI * sin(M_PI * x1) * sin(M_PI * x2);  
-}
-	
-void print_mat(int n, double* A){
-	for (int i=0; i<n; i++){
-		for (int j=0; j<n; j++){
-			printf("%lf, ", A[i*n + j]);
-		}
-		printf("\n");
-	}
-}
-
-#define GRID_PTS 6
 #define EPS 1e-7
 
 int main(){
-	int N = 2;
+	int N = 16;
+	int lmax = 2;
+	double omega = 1;
+	double nu = 4;
 	
-	FILE *fp = fopen("writeup/q2out.csv", "w");
-	FILE *fp_sol = fopen("writeup/q2sol.txt", "w");
-	fprintf(fp, "N,time,num iter\n");
+	for (int i=0; i<4; i++){
+		
+		printf("\nN = %d\n", N);
 	
-	for (int k=0; k<GRID_PTS; k++){
-		N *= 2;
-
 		long long int size = N*N;
 		double* A = calloc(size * size, sizeof(double));
 		double* u = calloc(size, sizeof(double));
 		double* b = calloc(size, sizeof(double));
+		make_matrix(A, b, N);
 
-		for (int i=0; i<size; ++i){
-			A[i*size + i] =  4.0;
-		}
-		for (int i=0; i<size-1; ++i){
-			if ((i % N) != N-1){
-				A[(i+1)*size + i+0] = 1.0;
-				A[(i+0)*size + i+1] = 1.0;	
-			}
-		}
-		for (int i=0; i<size-N; ++i){
-			A[(i+N)*size + i+0] = 1.0;
-			A[(i+0)*size    + i+N] = 1.0;
-		}
-
-		for (int i=0; i<N; i++){
-			for (int j=0; j<N; j++){
-				b[i*N + j] = f((double)i/N, (double)j/N);
-			}
-		}
-
-		
-		int num_iter;
-		double t1 = walltime();
-		conjugate_gradient(size, A, b, u, EPS, u, &num_iter);
-		double time = walltime() - t1;
+		double t0 = clock();
+		Vcycle(N, A, u, b, omega, nu, lmax, 0, EPS);
+		double t1 = clock();
+		double time = (t1 - t0) / (CLOCKS_PER_SEC);
 	
-		printf("N = %d Converged at iter = %d\n", N, num_iter);
-
-		if (k == GRID_PTS-1){	
-			for (int i=0; i<size; i++){
-				fprintf(fp_sol, "%lf ", u[i]);
-			}	
-			fprintf(fp_sol, "\n");
-		}
+		printf("time taken = %lf\n", time);
+		
+		double* r = calloc(size, sizeof(double));
+		mat_mul(A, u, r, size, size, 1);
+		printf("final residual ||r|| = %lf", norm(size, r));
+		printf(", ||r||/ len(r) = %lf\n", norm(size, r)/size);
 
 		free(A);
 		free(u);
 		free(b);
-		fprintf(fp, "%d,%lf,%d\n", N, time, num_iter);
+		free(r);
+
+		N *= 2;
 	}
-	fclose(fp);
-	fclose(fp_sol);
 }
 

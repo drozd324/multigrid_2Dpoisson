@@ -5,29 +5,18 @@
 #include <time.h> 
 #include "v_cycle.h"
 
-void print_mat(int n, double* A){
-	for (int i=0; i<n; i++){
-		for (int j=0; j<n; j++){
-			printf("%lf, ", A[i*n + j]);
-		}
-		printf("\n");
-	}
-}
-
-#define GRID_PTS 6
 #define EPS 1e-7
 
 int main(){
-	int N = 64;//128; // 2^7
-	int lmax = 6;
+	int N = 128;//128; // 2^7
+	int lmax = 7;
 	double omega = 1;
 	double nu = 4;
 	
-	//FILE *fp = fopen("writeup/q2out.csv", "w");
-	//fprintf(fp, "N,time,num iter\n");
-	
 	for (int l=2; l<lmax; l++){
-
+	
+		printf("\nl = %d\n", l);
+	
 		long long int size = N*N;
 		double* A = calloc(size * size, sizeof(double));
 		double* u = calloc(size, sizeof(double));
@@ -36,21 +25,20 @@ int main(){
 
 		double t0 = clock();
 		Vcycle(N, A, u, b, omega, nu, l, 0, EPS);
-		double t1 = clock();  
+		double t1 = clock();
 		double time = (t1 - t0) / (CLOCKS_PER_SEC);
 	
-		printf("%lf\n", time);
-
-//		for (int i=0; i<size; i++){
-//			fprintf(fp_sol, "%lf ", u[i]);
-//		}	
-//		fprintf(fp_sol, "\n");
+		printf("time taken = %lf\n", time);
+		
+		double* r = calloc(size, sizeof(double));
+		mat_mul(A, u, r, size, size, 1);
+		printf("final residual ||r|| = %lf", norm(size, r));
+		printf(", ||r||/ len(r) = %lf\n", norm(size, r)/size);
 
 		free(A);
 		free(u);
 		free(b);
-		//fprintf(fp, "%d,%lf,%d\n", N, time, num_iter);
+		free(r);
 	}
-	//fclose(fp);
 }
 

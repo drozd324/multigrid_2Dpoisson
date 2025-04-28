@@ -4,6 +4,22 @@
 #include <stdio.h>
 #include "v_cycle.h"
 
+/*
+ * @brief
+ * 
+ * @param int     m Rows
+ * @param int     n Cols
+ * @param double* A Matrix to show
+*/
+void print_mat(int m, int n, double* A){
+	for (int i=0; i<m; i++){
+		for (int j=0; j<n; j++){
+			printf("%lf, ", A[i*n + j]);
+		}
+		printf("\n");
+	}
+}
+
 double dot(int n, double* v, double* w){
 	double sum = 0;
 	for (int i=0; i<n; i++){
@@ -37,7 +53,7 @@ void mat_mul(double* A, double* B, double* C, int n, int m, int p){
 }
 
 /*
- * @brief Weighted Jacobi iteration function
+ * @brief Weighted Jacobi iteration function. If nu = -1 dont print anything.
  *
  * @param int     n     Shape of square matrix A
  * @param double* A     Matrix of size n x n
@@ -48,7 +64,7 @@ void mat_mul(double* A, double* B, double* C, int n, int m, int p){
  * @param double  eps   Maximum resiual
  * @param double* x_out Output solution vector
 */
-void jacobi(int n, double* A, double* x, double* b,
+int jacobi(int n, double* A, double* x, double* b,
 			 double omega, int nu, double eps, double* x_out){
 	double* x_prev = calloc(n, sizeof(double));
 	double* x_next = calloc(n, sizeof(double));
@@ -58,7 +74,8 @@ void jacobi(int n, double* A, double* x, double* b,
 	memcpy(x_prev, x, n * sizeof(double));
 
 	double sum; 
-	for (int k=0; k<nu; k++){
+	int k;
+	for (k=0; k<nu; k++){
 		for (int i=0; i<n; i++){
 			sum = 0;
 			for (int j=0; j<n; j++){
@@ -79,13 +96,18 @@ void jacobi(int n, double* A, double* x, double* b,
 		if (norm(n, residual) < eps){
 			break;
 		}
-		
 	}
 	
+	if (eps != -1){
+		printf("total no. of coarse level solves = %d\n", k);
+	}
+
 	memcpy(x_out, x_prev, n * sizeof(double));
 	free(x_next);
 	free(x_prev);
 	free(residual);
+
+	return k;
 }
 
 
@@ -323,17 +345,27 @@ int Vcycle(int nl, double* Al, double* xl, double* bl,
 
 	make_matrix(Al_next, bl_next, nl_next);
 	
+	// smooth	
 	jacobi(size, Al, xl, bl, omega, nu, -1, xl);
 	
+	// rl = bl - Alxl
 	mat_mul(Al, xl, rl, size, size, 1);
 	vect_sum(size, bl, -1, rl, rl);
 	
+	//printf("Consecutive residual r%d = ", l);
+	//print_mat(1, size, rl);
+	
+	printf("Consecutive residual norm ||r%d|| = %lf", l, norm(size, rl));
+	printf(", ||r%d|| / len(r%d) = %lf\n", l, l, norm(size, rl)/size);
+
 	restriction(nl, rl, bl_next);
 	
 	if ((l+1) == lmax){
 		jacobi(size_next, Al_next, xl_next, bl_next, omega, MAX_ITER, eps, xl_next);
+		//conjugate_gradient(n, A, b, x_0, eps, x){
 	} else {
-		Vcycle(nl_next, Al_next, xl_next, bl_next, omega, nu, lmax, l+1, eps);
+		Vcycle(nl_next, Al_next, xl_next, bl_next,
+				omega, nu, lmax, l+1, eps);
 	}
 	
 	double* Pxl_next = malloc(size * sizeof(double));
@@ -350,3 +382,56 @@ int Vcycle(int nl, double* Al, double* xl, double* bl,
 	
 	return 0;
 }
+
+
+
+/*
+ * @brief A serial variant of the congugate gradient algrithm following algorithm
+ * 			9.19 in Saad.
+ * 
+ * @param n[in] size of square matrix A 
+ * @param A[in] pointer to double representing square matrix of size n x n.
+ * @param b[in] pointer to double representing vector
+ * @param x_0[in] pointer to double for initial guess of solution to linear system
+ * @param eps[in] Precision to cut off convecgence with. 
+ * @param x[out] pointer to double for soution vector
+*/
+void conjugate_gradient(int n, double* A, double* b, double* x_0, double eps, double* x){
+	double alpha;
+	double beta;
+
+	double* p  = malloc(n * sizeof(double)); 
+	double* Ap = malloc(n * sizeof(double)); 
+	double* r  = malloc(n * sizeof(double)); 
+	double* Ar = malloc(n * sizeof(double)); 
+
+	mat_mul(A, x_0, r, n, n, 1);
+	vect_sum(n, b, -1, r, r);
+	memcpy(p, r, n*sizeof(double));
+	memcpy(x, x_0, n*sizeof(double));
+
+	double dot_Ar_prev;	
+
+	int j;
+	for (j=0; j<MAX_ITER; j++){
+		printf("iter j=%d\r", j);
+
+		mat_mul(A, r, Ar, n, n, 1);
+		mat_mul(A, p, Ap, n, n, 1);
+		alpha = dot(n, r, Ar) / dot(n, Ap, Ap);
+	
+		vect_sum(n, x,  alpha, p , x);
+		dot_Ar_prev = dot(n, r, Ar);	
+		vect_sum(n, r, -alpha, Ap, r);
+
+		if (norm(n, r) < eps) {
+			break;
+		}
+		
+		beta = dot(n, r, Ar) / dot_Ar_prev;
+		vect_sum(n, r, beta, p, p);
+	}
+
+	printf("\n");	
+}
+
