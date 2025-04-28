@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "v_cycle.h"
 
 double dot(int n, double* v, double* w){
 	double sum = 0;
@@ -38,16 +39,17 @@ void mat_mul(double* A, double* B, double* C, int n, int m, int p){
 /*
  * @brief Weighted Jacobi iteration function
  *
- * @param int     n     Shape of square matrix Al
- * @param double* A     Matrix of size nl x nl
+ * @param int     n     Shape of square matrix A
+ * @param double* A     Matrix of size n x n
  * @param double* x     Initial guess solution to system of length nl
- * @param double* b     Vector of lenght nl
+ * @param double* b     Vector of lenght n
  * @param double  omega Parameter for weighted jacobi. For non weighted jacobi = 1
  * @param double  nu    Max number of iteraions
  * @param double  eps   Maximum resiual
  * @param double* x_out Output solution vector
 */
-void jacobi(int n, double* A, double* x, double* b, double omega, int nu, double eps, double* x_out){
+void jacobi(int n, double* A, double* x, double* b,
+			 double omega, int nu, double eps, double* x_out){
 	double* x_prev = calloc(n, sizeof(double));
 	double* x_next = calloc(n, sizeof(double));
 	double* temp;
@@ -59,7 +61,7 @@ void jacobi(int n, double* A, double* x, double* b, double omega, int nu, double
 	for (int k=0; k<nu; k++){
 		for (int i=0; i<n; i++){
 			sum = 0;
-			for (int j=0; i<n; i++){
+			for (int j=0; j<n; j++){
 				if (i!=j){
 					sum += A[i*n +j] * x_prev[j];
 				}
@@ -69,7 +71,7 @@ void jacobi(int n, double* A, double* x, double* b, double omega, int nu, double
 		
 		temp = x_next;
 		x_next = x_prev;
-		x_prev = temp;		
+		x_prev = temp;
 		
 		// check residual
 		mat_mul(A, x_prev, residual, n, n, 1);
@@ -83,6 +85,7 @@ void jacobi(int n, double* A, double* x, double* b, double omega, int nu, double
 	memcpy(x_out, x_prev, n * sizeof(double));
 	free(x_next);
 	free(x_prev);
+	free(residual);
 }
 
 
@@ -93,9 +96,9 @@ double f(double x1, double x2){
 /*
  * @brief Function to construct matrix for 2d poisson problem
  *
- * @param int     N    Shape of square matrix Al
- * @param double* A    Matrix of size N x N 
- * @param double* b    Vector of lenght N
+ * @param int     N    Side leght of problem size
+ * @param double* A    Matrix of size NxN x NxN
+ * @param double* b    Vector of lenght N x N
 */
 void make_matrix(double* A, double* b, int N){
 	int size = N*N;
@@ -111,15 +114,16 @@ void make_matrix(double* A, double* b, int N){
 	}
 	for (int i=0; i<size-N; ++i){
 		A[(i+N)*size + i+0] = 1.0;
-		A[(i+0)*size    + i+N] = 1.0;
+		A[(i+0)*size + i+N] = 1.0;
 	}
 
 	for (int i=0; i<N; i++){
 		for (int j=0; j<N; j++){
-			b[i*N + j] = f((double)(i/N), (double)(j/N));
+			b[i*N + j] = f((double)i/(double)N, (double)j/(double)N);
 		}
 	}
 }
+
 //void restriction(int N, double* u, double* out){
 //	int n = N/2; 
 //	int i;
@@ -234,6 +238,13 @@ void restriction(int N, double* u, double* out){
 	}
 }
 
+/*
+ * @brief 
+ * 
+ * @param int     n   Lenght of u 
+ * @param double* u   Vector to interpolate of size n*n
+ * @param double* out Interpolated vector of lenght of lenght 2n*2n
+*/
 void prolongate(int n, double* u, double* out){
 	int N = n*2; 
 	int i;
@@ -246,6 +257,7 @@ void prolongate(int n, double* u, double* out){
 		I = i/2;
 		for (j=0; j<N; j+=2){
 			J = j/2;
+			//printf("i,j = %d,%d | I,J = %d,%d | N=%d, n=%d\n", i, j, I, J, N, n);
 			out[i*N + j] = u[I*n + J]; 	
 		}
 	}
@@ -264,7 +276,7 @@ void prolongate(int n, double* u, double* out){
 		I = i/2;
 		for (j=0; j<(N-2); j+=2){
 			J = j/2;
-			out[(i+1)*N + j] = (u[I*n + J] + u[I*n + (J+1)]) / 2;
+			out[i*N + (j+1)] = (u[I*n + J] + u[I*n + (J+1)]) / 2;
 		}
 	}
 
@@ -280,15 +292,33 @@ void prolongate(int n, double* u, double* out){
 }
 
 
-void Vcycle(int nl, double* Al, double* xl, double* bl, 
+/*
+ * @brief Recursive V-cycle MG algorithm 
+ *
+ * @param int     nl    Shape of square matrix Al
+ * @param double* Al    Matrix of size nl x nl
+ * @param double* xl    Initial guess solution to system of length nl
+ * @param double* bl    Vector of lenght nl
+ * @param double  omega Parameter for weighted jacobi. For non weighted jacobi = 1
+ * @param double  nu    Max number of iteraions
+ * @param double  eps   Maximum resiual
+ * @param double* x_out Output solution vector
+*/
+int Vcycle(int nl, double* Al, double* xl, double* bl, 
 			double omega, int nu, int lmax, int l, double eps){
-	int nl_next = nl/2;
-	int size = nl*nl;
-	int size_next = nl_next*nl_next;
 
-	double* Al_next = malloc(size_next*size_next * sizeof(double));
-	double* bl_next = malloc(size_next* sizeof(double));
-	double* xl_next = malloc(size_next* sizeof(double));
+	int size = nl * nl;
+	int nl_next = nl/2;
+	int size_next = nl_next * nl_next;
+		
+	if (nl == 1){
+		fprintf(stderr, "[ERROR] problem size too small level=%d\n", l);
+		return 1;
+	}
+		
+	double* Al_next = calloc(size_next*size_next, sizeof(double));
+	double* bl_next = malloc(size_next * sizeof(double));
+	double* xl_next = malloc(size_next * sizeof(double));
 	double* rl = malloc(size * sizeof(double));
 
 	make_matrix(Al_next, bl_next, nl_next);
@@ -298,24 +328,25 @@ void Vcycle(int nl, double* Al, double* xl, double* bl,
 	mat_mul(Al, xl, rl, size, size, 1);
 	vect_sum(size, bl, -1, rl, rl);
 	
-	restriction(size, rl, bl_next);                        
+	restriction(nl, rl, bl_next);
 	
 	if ((l+1) == lmax){
-		jacobi(size_next, Al_next, xl_next, bl_next, omega, nu, eps, xl_next);
+		jacobi(size_next, Al_next, xl_next, bl_next, omega, MAX_ITER, eps, xl_next);
 	} else {
-		Vcycle(size_next, Al_next, xl_next, bl_next, omega, nu, lmax, l+1, eps);
+		Vcycle(nl_next, Al_next, xl_next, bl_next, omega, nu, lmax, l+1, eps);
 	}
 	
-	double* Pxl_next = malloc(size_next* sizeof(double));
-	prolongate(size, xl_next, Pxl_next);
+	double* Pxl_next = malloc(size * sizeof(double));
+	prolongate(nl_next, xl_next, Pxl_next);
 	vect_sum(size, xl, 1, Pxl_next, xl);
 	
 	jacobi(size, Al, xl, bl, omega, nu, -1, xl);
-
 
 	free(rl);
 	free(bl_next);
 	free(xl_next);
 	free(Al_next);
 	free(Pxl_next);
+	
+	return 0;
 }

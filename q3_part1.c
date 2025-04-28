@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <time.h> 
 #include "v_cycle.h"
 
-	
 void print_mat(int n, double* A){
 	for (int i=0; i<n; i++){
 		for (int j=0; j<n; j++){
@@ -14,25 +14,12 @@ void print_mat(int n, double* A){
 	}
 }
 
-
-/**
- * @brief Function to measure time
- *
- * @param[out] Actual time in seconds
- */
-double walltime(){
-    struct timeval t;
-    gettimeofday(&t, NULL);
-    double wtime = (double) (t.tv_sec + t.tv_usec*1e-6);
-    return wtime;
-}
-
 #define GRID_PTS 6
 #define EPS 1e-7
 
 int main(){
-	int N = 64;
-	int lmax = 5;
+	int N = 64;//128; // 2^7
+	int lmax = 6;
 	double omega = 1;
 	double nu = 4;
 	
@@ -45,13 +32,12 @@ int main(){
 		double* A = calloc(size * size, sizeof(double));
 		double* u = calloc(size, sizeof(double));
 		double* b = calloc(size, sizeof(double));
-		
-		double t1 = walltime();
 		make_matrix(A, b, N);
-		Vcycle(N, A, u, b, omega, nu, lmax, l, EPS);
-		//Vcycle(int nl, double* Al, double* xl, double* bl, 
-		//	double omega, int nu, int lmax, int l, double r, double eps);
-		double time = walltime() - t1;
+
+		double t0 = clock();
+		Vcycle(N, A, u, b, omega, nu, l, 0, EPS);
+		double t1 = clock();  
+		double time = (t1 - t0) / (CLOCKS_PER_SEC);
 	
 		printf("%lf\n", time);
 
