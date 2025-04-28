@@ -149,7 +149,7 @@ void make_matrix(double* A, double* b, int N){
 //void restriction(int N, double* u, double* out){
 //	int n = N/2; 
 //	int i;
-//	int j
+//	int j;
 //	int I;
 //	int J;
 //
@@ -220,7 +220,7 @@ void make_matrix(double* A, double* b, int N){
 //	I = i*2;
 //	J = j*2;
 //	out[i*n + j] = (1/8) * (				5*u[N*(I+1) + J] + u[N*(I+1) + (J+1)] +
-//											  u[N*(I  ) + J] + u[N*(I  ) + (J+1)] +
+//											  u[N*(I  ) + J] + u[N*(I  ) + (J+1)] 
 //																				 );
 //
 //	// bottom right
@@ -259,6 +259,7 @@ void restriction(int N, double* u, double* out){
 		}
 	}
 }
+
 
 /*
  * @brief 
@@ -332,9 +333,19 @@ int Vcycle(int nl, double* Al, double* xl, double* bl,
 	int size = nl * nl;
 	int nl_next = nl/2;
 	int size_next = nl_next * nl_next;
-		
+	
+	if (omega < 0 || omega > 1){
+		fprintf(stderr, "[ERROR] omega=%lf should be a number bewten 0 and 1\n", omega);
+		return 1;
+	}
+	
 	if (nl == 1){
-		fprintf(stderr, "[ERROR] problem size too small level=%d\n", l);
+		fprintf(stderr, "[ERROR] problem size nl=%d too small on level=%d\n", nl, l);
+		return 1;
+	}
+
+	if (l >= lmax){
+		fprintf(stderr, "[ERROR] l=%d >= lmax=%d . level number should not exeed the max level number \n", l, lmax );
 		return 1;
 	}
 		
@@ -352,19 +363,16 @@ int Vcycle(int nl, double* Al, double* xl, double* bl,
 	mat_mul(Al, xl, rl, size, size, 1);
 	vect_sum(size, bl, -1, rl, rl);
 	
-	//printf("Consecutive residual r%d = ", l);
-	//print_mat(1, size, rl);
-	
 	printf("Consecutive residual norm ||r%d|| = %lf", l, norm(size, rl));
 	printf(", ||r%d|| / len(r%d) = %lf\n", l, l, norm(size, rl)/size);
 
 	restriction(nl, rl, bl_next);
 	
+	int return_val = 0; 
 	if ((l+1) == lmax){
 		jacobi(size_next, Al_next, xl_next, bl_next, omega, MAX_ITER, eps, xl_next);
-		//conjugate_gradient(n, A, b, x_0, eps, x){
 	} else {
-		Vcycle(nl_next, Al_next, xl_next, bl_next,
+		return_val = Vcycle(nl_next, Al_next, xl_next, bl_next,
 				omega, nu, lmax, l+1, eps);
 	}
 	
@@ -380,58 +388,5 @@ int Vcycle(int nl, double* Al, double* xl, double* bl,
 	free(Al_next);
 	free(Pxl_next);
 	
-	return 0;
+	return return_val;
 }
-
-
-
-/*
- * @brief A serial variant of the congugate gradient algrithm following algorithm
- * 			9.19 in Saad.
- * 
- * @param n[in] size of square matrix A 
- * @param A[in] pointer to double representing square matrix of size n x n.
- * @param b[in] pointer to double representing vector
- * @param x_0[in] pointer to double for initial guess of solution to linear system
- * @param eps[in] Precision to cut off convecgence with. 
- * @param x[out] pointer to double for soution vector
-*/
-void conjugate_gradient(int n, double* A, double* b, double* x_0, double eps, double* x){
-	double alpha;
-	double beta;
-
-	double* p  = malloc(n * sizeof(double)); 
-	double* Ap = malloc(n * sizeof(double)); 
-	double* r  = malloc(n * sizeof(double)); 
-	double* Ar = malloc(n * sizeof(double)); 
-
-	mat_mul(A, x_0, r, n, n, 1);
-	vect_sum(n, b, -1, r, r);
-	memcpy(p, r, n*sizeof(double));
-	memcpy(x, x_0, n*sizeof(double));
-
-	double dot_Ar_prev;	
-
-	int j;
-	for (j=0; j<MAX_ITER; j++){
-		printf("iter j=%d\r", j);
-
-		mat_mul(A, r, Ar, n, n, 1);
-		mat_mul(A, p, Ap, n, n, 1);
-		alpha = dot(n, r, Ar) / dot(n, Ap, Ap);
-	
-		vect_sum(n, x,  alpha, p , x);
-		dot_Ar_prev = dot(n, r, Ar);	
-		vect_sum(n, r, -alpha, Ap, r);
-
-		if (norm(n, r) < eps) {
-			break;
-		}
-		
-		beta = dot(n, r, Ar) / dot_Ar_prev;
-		vect_sum(n, r, beta, p, p);
-	}
-
-	printf("\n");	
-}
-
