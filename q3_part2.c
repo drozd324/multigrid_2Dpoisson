@@ -3,15 +3,26 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <time.h> 
+#include <unistd.h>
 #include "v_cycle.h"
 
 #define EPS 1e-7
 
-int main(){
+int main(int argc, char *argv[]) {
+
 	int N = 16;
 	int lmax = 2;
 	double omega = 1;
 	double nu = 4;
+	int option;
+  
+    while ((option = getopt(argc, argv, "L:")) != -1) {
+        switch (option) {
+            case 'L':
+	            lmax = atoi(optarg);
+				break;
+		}
+	}
 	
 	for (int i=0; i<4; i++){
 		

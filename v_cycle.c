@@ -146,104 +146,13 @@ void make_matrix(double* A, double* b, int N){
 	}
 }
 
-//void restriction(int N, double* u, double* out){
-//	int n = N/2; 
-//	int i;
-//	int j;
-//	int I;
-//	int J;
-//
-//	// interior
-//	for (i=1; i<(n-1); i++){
-//		I = i*2;
-//		for (j=1; j<(n-1); j++){
-//			J = j*2;
-//			out[i*n + j] = (1/18) * (u[N*(I+1) + (J-1)] +  u[N*(I+1) + J] + u[N*(I+1) + (J+1)] +
-//									 u[N*(I  ) + (J-1)]+10*u[N*(I  ) + J] + u[N*(I  ) + (J+1)] +
-//									 u[N*(I-1) + (J-1)] +  u[N*(I-1) + J] + u[N*(I-1) + (J+1)]);
-//		}
-//	}
-//
-//	// left
-//	j = 0;
-//	J = J*2;
-//	for (i=1; i<(n-1); i++){
-//		I = i*2;
-//		out[i*n + j] = (1/12) * (						u[N*(I+1) + J] + u[N*(I+1) + (J+1)] +
-//													  7*u[N*(I  ) + J] + u[N*(I  ) + (J+1)] +
-//														u[N*(I-1) + J] + u[N*(I-1) + (J+1)]);
-//	}
-//
-//	// right
-//	j = n;
-//	J = j*2;
-//	for (i=1; i<(n-1); i++){
-//		I = i*2;
-//		out[i*n + j] = (1/12) * (u[N*(I+1) + (J-1)] + u[N*(I+1) + J] +
-//							 	 u[N*(I  ) + (J-1)]+7*u[N*(I  ) + J] +
-//								 u[N*(I-1) + (J-1)] + u[N*(I-1) + J] );
-//	}
-//
-//	// top 
-//	i = 0;
-//	I = i*2;
-//	for (j=1; j<(n-1); j++){
-//		J = j*2;
-//		out[i*n + j] = (1/12) * (
-//								u[N*(I  ) + (J-1)] + u[N*(I  ) + J] + u[N*(I  ) + (J+1)] +
-//								u[N*(I-1) + (J-1)]+7*u[N*(I-1) + J] + u[N*(I-1) + (J+1)]);
-//	}
-//
-//	// bottom
-//	i = n;
-//	I = i*2;
-//	for (j=1; j<(n-1); j++){
-//		J = j*2;
-//		out[i*n + j] = (1/12) * (u[N*(I+1) + (J-1)] + u[N*(I+1) + J] + u[N*(I+1) + (J+1)] +
-//								u[N*(I  ) + (J-1)]+7*u[N*(I  ) + J] + u[N*(I  ) + (J+1)] 
-//																						);
-//	}
-//
-//
-//	// top left
-//	i = 0;
-//	j = 0;
-//	I = i*2;
-//	J = j*2;
-//	out[i*n + j] = (1/8) * (   
-//										       5*u[N*(I  ) + J] + u[N*(I  ) + (J+1)] +
-//											     u[N*(I-1) + J] + u[N*(I-1) + (J+1)]);
-//
-//	// bottom left
-//	i = n;
-//	j = 0;
-//	I = i*2;
-//	J = j*2;
-//	out[i*n + j] = (1/8) * (				5*u[N*(I+1) + J] + u[N*(I+1) + (J+1)] +
-//											  u[N*(I  ) + J] + u[N*(I  ) + (J+1)] 
-//																				 );
-//
-//	// bottom right
-//	i = n;
-//	j = n;
-//	I = i*2;
-//	J = j*2;
-//	out[i*n + j] = (1/8) * (u[N*(I+1) + (J-1)] + u[N*(I+1) + J] +
-//							u[N*(I  ) + (J-1)]+5*u[N*(I  ) + J] 
-//																					);
-//
-//	// top right
-//	i = 0;
-//	j = n;
-//	I = i*2;
-//	J = j*2;
-//	out[i*n + j] = (1/8) * (
-//							u[N*(I  ) + (J-1)]+5*u[N*(I  ) + J] +
-//							u[N*(I-1) + (J-1)] + u[N*(I-1) + J]                 );
-//
-//}
-
-
+/*
+ * @brief Restriction function for 2d problem. 
+ * 
+ * @param int     N   Lenght of u 
+ * @param double* u   Vector to interpolate of size N x N
+ * @param double* out Vector of lenght of lenght N/2 x N/2
+*/
 void restriction(int N, double* u, double* out){
 	int n = N/2; 
 	int i;
@@ -262,7 +171,7 @@ void restriction(int N, double* u, double* out){
 
 
 /*
- * @brief 
+ * @brief Prolongation function for 2d problem. 
  * 
  * @param int     n   Lenght of u 
  * @param double* u   Vector to interpolate of size n*n
@@ -335,17 +244,12 @@ int Vcycle(int nl, double* Al, double* xl, double* bl,
 	int size_next = nl_next * nl_next;
 	
 	if (omega < 0 || omega > 1){
-		fprintf(stderr, "[ERROR] omega=%lf should be a number bewten 0 and 1\n", omega);
-		return 1;
-	}
-	
-	if (nl == 1){
-		fprintf(stderr, "[ERROR] problem size nl=%d too small on level=%d\n", nl, l);
+		printf("[ERROR] omega=%lf should be a number bewten 0 and 1\n", omega);
 		return 1;
 	}
 
 	if (l >= lmax){
-		fprintf(stderr, "[ERROR] l=%d >= lmax=%d . level number should not exeed the max level number \n", l, lmax );
+		printf("[ERROR] l=%d >= lmax=%d . level number should not exeed the max level number \n", l, lmax );
 		return 1;
 	}
 		
@@ -369,7 +273,10 @@ int Vcycle(int nl, double* Al, double* xl, double* bl,
 	restriction(nl, rl, bl_next);
 	
 	int return_val = 0; 
-	if ((l+1) == lmax){
+	if ((l+1) == lmax || nl_next == 2){
+		if (nl_next == 2){
+			printf("[ERROR] problem size nl=%d too small on level=%d. Starting solve on level=%d\n", nl, l, l);
+		}
 		jacobi(size_next, Al_next, xl_next, bl_next, omega, MAX_ITER, eps, xl_next);
 	} else {
 		return_val = Vcycle(nl_next, Al_next, xl_next, bl_next,

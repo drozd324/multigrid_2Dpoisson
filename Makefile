@@ -17,5 +17,5 @@ v_cycle.o: v_cycle.c
 
 .PHONY: clean
 clean:
-	rm -f *.o $(EXECS)
+	rm -f *.o *.out $(EXECS) 
 
