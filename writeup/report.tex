@@ -63,8 +63,8 @@
 	and the time it takes appear directly related and makes sense since the these
 	iterations take most of the copmute time. Having a look at the norm of the 
 	residual in the middle plot from which we can note that the value of the residual 
-	stays roughly in the same range of values. This tells us that is we change $lmax$,
-	our residual stays roughy the same untill interpolation and extrapolation errors 
+	stays relatively low untill a threshold at $lmax = 3$ untill the residual begins to 
+	grow very quickly as interpolation and extrapolation errors 
 	take over.
 
 	\begin{figure}[h!]
@@ -82,8 +82,11 @@
 
 	The plots below are only showing $N = 16, 32, 64, 128$. For the value of $N=256$
 	I didnt have a machine to use with a sufficent amount of RAM. In the middle plot 
-	below you can see that comparing both $lmax$ values the norm of the residual doesnt
-	change significanlty and grows linearly. Keeping this in mind and analysing the 
+	below you can see that comparing both $lmax$ values the norm of the residual
+	changes significanlty and shows us that drastically inscreasing the size numeber
+	of levels in $lmax$ has more and more of an impact on the residual. I would assume
+	this defficiencly is built in the liner interpolation built into the "prolongation()"
+	function. Keeping this in mind and analysing the 
 	left and right most plots we can see that $lmax=8$ outpreforms $lmax=2$ in runtime and
 	and $lmax=8$ requires a significanly smaller number of iterations to be soled at the
 	lowest level.  

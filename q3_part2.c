@@ -43,6 +43,7 @@ int main(int argc, char *argv[]) {
 		
 		double* r = calloc(size, sizeof(double));
 		mat_mul(A, u, r, size, size, 1);
+		vect_sum(size, b, -1, r, r);
 		printf("final residual ||r|| = %lf", norm(size, r));
 		printf(", ||r||/ len(r) = %lf\n", norm(size, r)/size);
 

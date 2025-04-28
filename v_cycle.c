@@ -125,18 +125,20 @@ double f(double x1, double x2){
 void make_matrix(double* A, double* b, int N){
 	int size = N*N;
 
+	double h = 1.0;
+
 	for (int i=0; i<size; ++i){
-		A[i*size + i] =  4.0;
+		A[i*size + i] =  4.0/h;
 	}
 	for (int i=0; i<size-1; ++i){
 		if ((i % N) != N-1){
-			A[(i+1)*size + i+0] = 1.0;
-			A[(i+0)*size + i+1] = 1.0;	
+			A[(i+1)*size + i+0] = 1.0/h;
+			A[(i+0)*size + i+1] = 1.0/h;	
 		}
 	}
 	for (int i=0; i<size-N; ++i){
-		A[(i+N)*size + i+0] = 1.0;
-		A[(i+0)*size + i+N] = 1.0;
+		A[(i+N)*size + i+0] = 1.0/h;
+		A[(i+0)*size + i+N] = 1.0/h;
 	}
 
 	for (int i=0; i<N; i++){

@@ -17,7 +17,7 @@ int main(){
 	
 		printf("\nl = %d\n", l);
 	
-		long long int size = N*N;
+		int size = N*N;
 		double* A = calloc(size * size, sizeof(double));
 		double* u = calloc(size, sizeof(double));
 		double* b = calloc(size, sizeof(double));
@@ -32,6 +32,7 @@ int main(){
 		
 		double* r = calloc(size, sizeof(double));
 		mat_mul(A, u, r, size, size, 1);
+		vect_sum(size, b, -1, r, r);
 		printf("final residual ||r|| = %lf", norm(size, r));
 		printf(", ||r||/ len(r) = %lf\n", norm(size, r)/size);
 
